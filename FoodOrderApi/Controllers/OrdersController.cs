@@ -93,5 +93,128 @@ namespace FoodOrderApi.Controllers
                 return NoContent();
             }
         }
+
+        [HttpGet("OrderDetails/{id}")]
+        public async Task<ActionResult<OrderDetails>> GetOrderDetails(int id)
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+                var sqlQuery = @"
+                SELECT o.OrderId, o.TotalAmount, o.Status, o.OrderDate,
+                       r.RestaurantId, r.Name AS RestaurantName, r.Address AS RestaurantAddress,
+                       u.UserId, u.Username AS UserName, u.Email AS UserEmail
+                FROM Orders o
+                JOIN Restaurants r ON o.RestaurantId = r.RestaurantId
+                JOIN Users u ON o.UserId = u.UserId
+                WHERE o.OrderId = @Id";
+
+                var orderDetails = await dbConnection.QueryAsync<OrderDetails, RestaurantInfo, UserInfo, OrderDetails>(
+            sqlQuery,
+            (order, restaurant, user) =>
+            {
+                order.User = user;
+                order.Restaurant = restaurant;
+                return order;
+            },
+            new { Id = id },
+            splitOn: "RestaurantId,UserId" // تقسيم على UserId ثم RestaurantId
+        );
+
+
+                if (orderDetails == null)
+                {
+                    return NotFound();
+                }
+                return Ok(orderDetails);
+            }
+        }
+
+        [HttpGet("OrderDetails/All")]
+        public async Task<ActionResult<OrderDetails>> GetOrderDetailsAll()
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+                var sqlQuery = @"
+                SELECT o.OrderId, o.TotalAmount, o.Status, o.OrderDate,
+                       r.RestaurantId, r.Name AS RestaurantName, r.Address AS RestaurantAddress,
+                       u.UserId, u.Username AS UserName, u.Email AS UserEmail
+                FROM Orders o
+                JOIN Restaurants r ON o.RestaurantId = r.RestaurantId
+                JOIN Users u ON o.UserId = u.UserId";
+
+                var orderDetails = await dbConnection.QueryAsync<OrderDetails, RestaurantInfo, UserInfo, OrderDetails>(
+            sqlQuery,
+            (order, restaurant, user) =>
+            {
+                order.User = user;
+                order.Restaurant = restaurant;
+                return order;
+            },
+            splitOn: "RestaurantId,UserId" // تقسيم على UserId ثم RestaurantId
+        );
+
+
+                if (orderDetails == null)
+                {
+                    return NotFound();
+                }
+                return Ok(orderDetails);
+            }
+        }
+
+        [HttpGet("with-items")]
+        public async Task<ActionResult<IEnumerable<OrderWithItems>>> GetOrdersWithItems()
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+                var sqlQuery = @"SELECT o.OrderId, o.TotalAmount, o.Status, o.OrderDate,
+                   oi.OrderItemId, oi.MenuItemId, m.Name AS MenuItemName, oi.Price , oi.Quantity
+            FROM Orders o
+            LEFT JOIN OrderItems oi ON o.OrderId = oi.OrderId
+            LEFT JOIN MenuItems m ON oi.MenuItemId = m.MenuItemId
+            ";
+
+                var orderDictionary = new Dictionary<int, OrderWithItems>();
+
+                var result = await dbConnection.QueryAsync<OrderWithItems, OrderItemInfo, OrderWithItems>(
+                    sqlQuery,
+                    (order, orderItem) =>
+                    {
+                        if (!orderDictionary.TryGetValue(order.OrderId, out var orderWithItems))
+                        {
+                            orderWithItems = new OrderWithItems
+                            {
+                                OrderId = order.OrderId,
+                                TotalAmount = order.TotalAmount,
+                                Status = order.Status,
+                                OrderDate = order.OrderDate,
+                                OrderItems = new List<OrderItemInfo>()
+                            };
+                            orderDictionary.Add(order.OrderId, orderWithItems);
+                        }
+
+                        if (orderItem != null)
+                        {
+                            orderWithItems.OrderItems.Add(new OrderItemInfo
+                            {
+                                OrderItemId = orderItem.OrderItemId,
+                                MenuItemId = orderItem.MenuItemId,
+                                MenuItemName = orderItem.MenuItemName,
+                                Price = orderItem.Price,
+                                Quantity = orderItem.Quantity // إضافة قيمة الكمية
+                            });
+                        }
+
+                        return orderWithItems;
+                    },
+                    splitOn: "OrderItemId" // تقسيم على OrderItemId
+                );
+
+                return Ok(orderDictionary.Values);
+            }
+        }
     }
 }

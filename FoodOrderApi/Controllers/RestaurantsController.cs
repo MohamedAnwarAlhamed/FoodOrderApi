@@ -156,7 +156,7 @@ namespace FoodOrderApi.Controllers
 
                 var restaurantDictionary = new Dictionary<int, RestaurantWithMenuItems>();
 
-                var result = await dbConnection.QueryAsync<RestaurantWithMenuItems, MenuItem, RestaurantWithMenuItems>(
+                var result = await dbConnection.QueryAsync<Restaurant, MenuItem, RestaurantWithMenuItems>(
                     sqlQuery,
                     (restaurant, menuItem) =>
                     {
@@ -191,6 +191,56 @@ namespace FoodOrderApi.Controllers
                 }
 
                 return Ok(restaurantDictionary.Values.First());
+            }
+
+
+        }
+
+        [HttpGet("all/menuitems")]
+        public async Task<ActionResult<IEnumerable<RestaurantWithMenuItems>>> GetAllRestaurantsWithMenuItems()
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+                var sqlQuery = @"
+            SELECT r.RestaurantId, r.Name, r.Address, r.Phone, r.CreatedAt, 
+                   m.MenuItemId, m.RestaurantId , m.Name , m.Description, m.Price, m.CreatedAt
+            FROM Restaurants r
+            LEFT JOIN MenuItems m ON r.RestaurantId = m.RestaurantId";
+
+                var restaurantDictionary = new Dictionary<int, RestaurantWithMenuItems>();
+
+                var result = await dbConnection.QueryAsync<Restaurant, MenuItem, RestaurantWithMenuItems>(
+                    sqlQuery,
+                    (restaurant, menuItem) =>
+                    {
+                        if (!restaurantDictionary.TryGetValue(restaurant.RestaurantId, out var restaurantWithMenuItems))
+                        {
+                            restaurantWithMenuItems = new RestaurantWithMenuItems
+                            {
+                                RestaurantId = restaurant.RestaurantId,
+                                Name = restaurant.Name,
+                                Address = restaurant.Address,
+                                Phone = restaurant.Phone,
+                                CreatedAt = restaurant.CreatedAt,
+                                MenuItems = new List<MenuItem>()
+                            };
+                            restaurantDictionary.Add(restaurant.RestaurantId, restaurantWithMenuItems);
+                        }
+
+                        if (menuItem != null)
+                        {
+                            restaurantWithMenuItems.MenuItems.Add(menuItem);
+                        }
+
+                        return restaurantWithMenuItems;
+                    },
+                    splitOn: "MenuItemId"
+                );
+
+                return Ok(restaurantDictionary.Values);//Ok(result);
+                //return Ok(result);
+
             }
         }
     }
