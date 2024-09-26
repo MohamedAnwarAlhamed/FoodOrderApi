@@ -243,6 +243,89 @@ namespace FoodOrderApi.Controllers
 
             }
         }
+
+        [HttpPost("Create")]
+        public async Task<ActionResult> CreateRestaurant([FromBody] RestaurantCreateDto restaurantDto)
+        {
+            if (restaurantDto == null || restaurantDto.MenuItems == null || !restaurantDto.MenuItems.Any())
+            {
+                return BadRequest("Invalid restaurant data.");
+            }
+            var restaurantId = 0;
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+
+                // إدخال بيانات المطعم
+                var insertRestaurantQuery = @"
+            INSERT INTO Restaurants (Name, Address, Phone)
+            VALUES (@Name, @Address, @Phone);
+            SELECT SCOPE_IDENTITY();"; // استخدم الحقل المناسب إذا كنت تستخدم SQL Server
+
+                restaurantId = await dbConnection.ExecuteScalarAsync<int>(insertRestaurantQuery, restaurantDto);
+
+                // إدخال الأصناف المرتبطة بالمطعم
+                var insertMenuItemsQuery = @"
+            INSERT INTO MenuItems (Name, Price, Description, RestaurantId)
+            VALUES (@Name, @Price, @Description, @RestaurantId)"; // إضافة وصف الصنف
+
+                foreach (var menuItem in restaurantDto.MenuItems)
+                {
+                    await dbConnection.ExecuteAsync(insertMenuItemsQuery, new
+                    {
+                        Name = menuItem.Name,
+                        Price = menuItem.Price,
+                        Description = menuItem.Description, // إضافة الوصف
+                        RestaurantId = restaurantId
+                    });
+                }
+            }
+
+            return CreatedAtAction(nameof(CreateRestaurant), new { id = restaurantId }, restaurantDto);
+        }
+
+        [HttpPost("bulk")]
+        public async Task<ActionResult> CreateRestaurants([FromBody] RestaurantsCreateDto restaurantsDto)
+        {
+            if (restaurantsDto == null || restaurantsDto.Restaurants == null || !restaurantsDto.Restaurants.Any())
+            {
+                return BadRequest("Invalid restaurant data.");
+            }
+
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+
+                foreach (var restaurantDto in restaurantsDto.Restaurants)
+                {
+                    // إدخال بيانات المطعم
+                    var insertRestaurantQuery = @"
+                INSERT INTO Restaurants (Name, Address, Phone)
+                VALUES (@Name, @Address, @Phone);
+                SELECT SCOPE_IDENTITY();"; // استخدم SCOPE_IDENTITY() إذا كنت تستخدم SQL Server
+
+                    var restaurantId = await dbConnection.ExecuteScalarAsync<int>(insertRestaurantQuery, restaurantDto);
+
+                    // إدخال الأصناف المرتبطة بالمطعم
+                    var insertMenuItemsQuery = @"
+                INSERT INTO MenuItems (Name, Price, Description, RestaurantId)
+                VALUES (@Name, @Price, @Description, @RestaurantId)";
+
+                    foreach (var menuItem in restaurantDto.MenuItems)
+                    {
+                        await dbConnection.ExecuteAsync(insertMenuItemsQuery, new
+                        {
+                            Name = menuItem.Name,
+                            Price = menuItem.Price,
+                            Description = menuItem.Description,
+                            RestaurantId = restaurantId
+                        });
+                    }
+                }
+            }
+
+            return CreatedAtAction(nameof(CreateRestaurants), null, restaurantsDto);
+        }
     }
 
 
