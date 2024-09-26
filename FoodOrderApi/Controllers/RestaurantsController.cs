@@ -326,6 +326,73 @@ namespace FoodOrderApi.Controllers
 
             return CreatedAtAction(nameof(CreateRestaurants), null, restaurantsDto);
         }
+
+        [HttpGet("all-with-menu-items")]
+        public async Task<ActionResult<IEnumerable<RestaurantWithMenuItems>>> GetAllRestaurantsWithMenuItemsPro()
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+
+                var result = await dbConnection.QueryAsync<RestaurantWithMenuItems2, MenuItemInfo, RestaurantWithMenuItems2>(
+                    "GetAllRestaurantsWithMenuItems",
+                    (restaurant, menuItem) =>
+                    {
+                        if (menuItem != null)
+                        {
+                            restaurant.MenuItems.Add(menuItem);
+                        }
+                        return restaurant;
+                    },
+                    splitOn: "MenuItemId", // تقسيم على MenuItemId
+                    commandType: CommandType.StoredProcedure
+                );
+                var groupedResult = result.GroupBy(r => r.RestaurantId)
+                                 .Select(g =>
+                                 {
+                                     var restaurant = g.First();
+                                     restaurant.MenuItems = g.SelectMany(x => x.MenuItems).ToList();
+                                     return restaurant;
+                                 })
+                                 .ToList();
+
+                return Ok(groupedResult);
+                //return Ok(result.GroupBy(r => r.RestaurantId).Select(g => g.First()).ToList());
+            }
+        }
+
+        [HttpGet("all-with-menu-items-F")]
+        public async Task<ActionResult<IEnumerable<RestaurantWithMenuItems>>> GetAllRestaurantsWithMenuItemsF()
+        {
+            using (IDbConnection dbConnection = _dbHelper.Connection)
+            {
+                dbConnection.Open();
+
+                var result = await dbConnection.QueryAsync<RestaurantWithMenuItems2, MenuItemInfo, RestaurantWithMenuItems2>(
+                    "SELECT * FROM GetAllRestaurantsWithMenuItemsF()",
+                    (restaurant, menuItem) =>
+                    {
+                        if (menuItem != null)
+                        {
+                            restaurant.MenuItems.Add(menuItem);
+                        }
+                        return restaurant;
+                    },
+                    splitOn: "MenuItemId"
+                );
+
+                var groupedResult = result.GroupBy(r => r.RestaurantId)
+                                          .Select(g =>
+                                          {
+                                              var restaurant = g.First();
+                                              restaurant.MenuItems = g.SelectMany(x => x.MenuItems).ToList();
+                                              return restaurant;
+                                          })
+                                          .ToList();
+
+                return Ok(groupedResult);
+            }
+        }
     }
 
 
