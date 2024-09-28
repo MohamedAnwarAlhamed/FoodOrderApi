@@ -26,7 +26,7 @@ namespace FoodOrderApi.Controllers
             using (IDbConnection dbConnection = _dbHelper.Connection)
             {
                 dbConnection.Open();
-                var users = await dbConnection.QueryAsync<User>("SELECT * FROM Users");
+                var users = await dbConnection.QueryAsync<dynamic>("SELECT * FROM Users");
                 return Ok(users);
             }
         }
