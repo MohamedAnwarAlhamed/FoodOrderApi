@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using FoodOrderApi.Models;
+using Microsoft.AspNetCore.Authorization;
 namespace FoodOrderApi.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RestaurantsController : ControllerBase
