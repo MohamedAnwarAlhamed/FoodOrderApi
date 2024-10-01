@@ -5,6 +5,8 @@ using System.Data;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,8 +17,30 @@ builder.Services.AddScoped<IDbConnection>(sp => new DBHelper(builder.Configurati
 
 
 // Configure Basic Authentication
-builder.Services.AddAuthentication("BasicAuthentication")
-    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+//builder.Services.AddAuthentication("BasicAuthentication")
+//    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+
+
+// Configure JWT Bearer Authentication
+var key = builder.Configuration["Jwt:Key"]; //  √ﬂœ „‰ ≈÷«›… Â–« ›Ì appsettings.json
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+    };
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -25,13 +49,13 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Food Order API", Version = "v1" });
 
     // ≈÷«›… „⁄·Ê„«  «·„’«œﬁ…
-    c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "Ì—ÃÏ ≈œŒ«· »Ì«‰«  «·«⁄ „«œ »«” Œœ«„  ‰”Ìﬁ Basic ›Ì Â–« «·‘ﬂ·: 'Basic {base64encoded-credentials}'",
+        Description = "Ì—ÃÏ ≈œŒ«· —„“ Bearer »«” Œœ«„ Â–« «·‘ﬂ·: 'Bearer {token}'",
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
-        Scheme = "basic"
+        Scheme = "bearer"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -42,13 +66,54 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Basic" // «”„ «· ⁄—Ì› «·–Ì «” Œœ„ Â ›Ì AddSecurityDefinition
+                    Id = "Bearer" // «”„ «· ⁄—Ì› «·–Ì «” Œœ„ Â ›Ì AddSecurityDefinition
                 }
             },
             new string[] {}
         }
     });
 });
+
+//builder.Services.AddSwaggerGen(
+
+
+
+
+//    c =>
+//{
+//    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Food Order API", Version = "v1" });
+
+//    // ≈÷«›… „⁄·Ê„«  «·„’«œﬁ…
+//    c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+//    {
+//        In = ParameterLocation.Header,
+//        Description = "Ì—ÃÏ ≈œŒ«· »Ì«‰«  «·«⁄ „«œ »«” Œœ«„  ‰”Ìﬁ Basic ›Ì Â–« «·‘ﬂ·: 'Basic {base64encoded-credentials}'",
+//        Name = "Authorization",
+//        Type = SecuritySchemeType.Http,
+//        Scheme = "basic"
+//    });
+
+//    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Type = ReferenceType.SecurityScheme,
+//                    Id = "Basic" // «”„ «· ⁄—Ì› «·–Ì «” Œœ„ Â ›Ì AddSecurityDefinition
+//                }
+//            },
+//            new string[] {}
+//        }
+//    });
+//}
+
+
+//);
+
+
+
 
 var app = builder.Build();
 
