@@ -8,4 +8,11 @@
         public string Email { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+
+    public class User2
+    {
+        public string Username { get; set; }
+        public string PasswordHash { get; set; }
+       
+    }
 }
