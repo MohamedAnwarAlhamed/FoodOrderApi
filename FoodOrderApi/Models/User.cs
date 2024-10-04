@@ -15,4 +15,10 @@
         public string PasswordHash { get; set; }
        
     }
+
+    public class User3
+    {
+        public string Username { get; set; }
+        public string Token { get; set; }
+    }
 }

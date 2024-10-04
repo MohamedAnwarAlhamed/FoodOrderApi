@@ -34,35 +34,6 @@ builder.Services.AddScoped<IDbConnection>(sp => new DBHelper(builder.Configurati
 
 //// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 //builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen(c =>
-//{
-//    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Food Order API", Version = "v1" });
-
-//    // ≈÷«›… „⁄·Ê„«  «·„’«œﬁ…
-//    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-//    {
-//        In = ParameterLocation.Header,
-//        Description = "Ì—ÃÏ ≈œŒ«· —„“ Bearer »«” Œœ«„ Â–« «·‘ﬂ·: 'Bearer {token}'",
-//        Name = "Authorization",
-//        Type = SecuritySchemeType.Http,
-//        Scheme = "bearer"
-//    });
-
-//    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-//    {
-//        {
-//            new OpenApiSecurityScheme
-//            {
-//                Reference = new OpenApiReference
-//                {
-//                    Type = ReferenceType.SecurityScheme,
-//                    Id = "Bearer" // «”„ «· ⁄—Ì› «·–Ì «” Œœ„ Â ›Ì AddSecurityDefinition
-//                }
-//            },
-//            new string[] {}
-//        }
-//    });
-//});
 
 //builder.Services.AddSwaggerGen(
 
@@ -188,20 +159,71 @@ builder.Services.AddScoped<IDbConnection>(sp => new DBHelper(builder.Configurati
 //    };
 //});
 
+//builder.Services.AddSwaggerGen(c =>
+//{
+//    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Food Order API", Version = "v1" });
+
+//    // ≈⁄œ«œ  ⁄—Ì› API Key
+//    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+//    {
+//        Type = SecuritySchemeType.ApiKey,
+//        Name = "X-API-Key", // «”„ «·—√” «·–Ì ”Ì „ «” Œœ«„Â
+//        In = ParameterLocation.Header,
+//        Description = "Enter your API key"
+//    });
+
+//    // ≈⁄œ«œ „ ÿ·»«  «·√„«‰
+//    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Type = ReferenceType.SecurityScheme,
+//                    Id = "ApiKey"
+//                }
+//            },
+//            new string[] {}
+//        }
+//    });
+//});
+
+
+// ≈⁄œ«œ JWT
+var key = Encoding.ASCII.GetBytes("Z5sE4l3pTg9pQj8u5l7qX8r3Tg9pQj8u5l7qX8r3Tg9pQj8uncjbjcsbdcmzxnciubdsiucb489375897345"); // «” Œœ„ „› «Õ ”—Ì ﬁÊÌ
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(x =>
+{
+    x.RequireHttpsMetadata = false; // ›Ì «·≈‰ «Ã «” Œœ„ true
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = false,
+        IssuerSigningKey = null,
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Food Order API", Version = "v1" });
 
-    // ≈⁄œ«œ  ⁄—Ì› API Key
-    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    // ≈÷«›… „⁄·Ê„«  «·„’«œﬁ…
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Type = SecuritySchemeType.ApiKey,
-        Name = "X-API-Key", // «”„ «·—√” «·–Ì ”Ì „ «” Œœ«„Â
         In = ParameterLocation.Header,
-        Description = "Enter your API key"
+        Description = "Ì—ÃÏ ≈œŒ«· —„“ Bearer »«” Œœ«„ Â–« «·‘ﬂ·: 'Bearer {token}'",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer"
     });
 
-    // ≈⁄œ«œ „ ÿ·»«  «·√„«‰
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -210,13 +232,15 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
+                    Id = "Bearer" // «”„ «· ⁄—Ì› «·–Ì «” Œœ„ Â ›Ì AddSecurityDefinition
                 }
             },
             new string[] {}
         }
     });
 });
+
+builder.Services.AddControllers();
 
 // »‰«¡ «· ÿ»Ìﬁ
 var app = builder.Build();

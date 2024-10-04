@@ -7,26 +7,41 @@ using FoodOrderApi.Models;
 using Microsoft.AspNetCore.Authorization;
 namespace FoodOrderApi.Controllers
 {
-    //[Authorize]
+    
     [Route("api/[controller]")]
     [ApiController]
     public class RestaurantsController : ControllerBase
     {
         private readonly DBHelper _dbHelper;
-        private const string ApiKeyHeaderName = "X-API-Key";
-        private const string ValidApiKey = "your_api_key_here";
+        //private const string ApiKeyHeaderName = "X-API-Key";
+        //private const string ValidApiKey = "your_api_key_here";
         public RestaurantsController(DBHelper dbHelper)
         {
             _dbHelper = dbHelper;
         }
 
+        private static List<User3> Users = new List<User3>
+        {
+            new User3 { Username = "user1", Token = "fixedtoken1" },
+            new User3 { Username = "user2", Token = "fixedtoken2" }
+        };
+
         // GET: api/restaurants
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Restaurant>>> GetRestaurants()
         {
-            if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKey) || apiKey != ValidApiKey)
+            //if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKey) || apiKey != ValidApiKey)
+            //{
+            //    return Unauthorized("Invalid API Key");
+            //}
+
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var user = Users.FirstOrDefault(u => u.Token == token);
+
+            if (user == null)
             {
-                return Unauthorized("Invalid API Key");
+                return Unauthorized(); // الرمز غير صالح
             }
 
             using (IDbConnection dbConnection = _dbHelper.Connection)

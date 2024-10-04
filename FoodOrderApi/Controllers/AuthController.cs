@@ -53,50 +53,68 @@ namespace FoodOrderApi.Controllers
         //    _userRepository = userRepository;
         //}
 
-        [HttpPost("token")]
-        public IActionResult GenerateToken([FromForm] UserLogin login)
-        {
-            var clientId = HttpContext.Request.Form["client_id"];
-            var clientSecret = HttpContext.Request.Form["client_secret"];
+        //    [HttpPost("token")]
+        //    public IActionResult GenerateToken([FromForm] UserLogin login)
+        //    {
+        //        var clientId = HttpContext.Request.Form["client_id"];
+        //        var clientSecret = HttpContext.Request.Form["client_secret"];
 
-            if (clientId != "client_id" || clientSecret != "client_secret")
+        //        if (clientId != "client_id" || clientSecret != "client_secret")
+        //        {
+        //            return Unauthorized(new { Message = "Invalid client credentials" });
+        //        }
+
+        //        // تحقق من بيانات الاعتماد (يمكنك استخدام قاعدة بيانات هنا)
+        //        if (login.Username == "user1" && login.Password == "password1")
+        //        {
+        //            var token = GenerateJwtToken(login.Username);
+        //            return Ok(new { token });
+        //        }
+
+        //        return Unauthorized();
+        //    }
+
+
+        //    private string GenerateJwtToken(string username)
+        //    {
+        //        // إعداد معلومات المستخدم
+        //        var claims = new[]
+        //        {
+        //    new Claim(JwtRegisteredClaimNames.Sub, username),
+        //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        //};
+
+        //        // إعداد المفتاح السري
+        //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Z5sE4l3pTg9pQj8u5l7qX8r3Tg9pQj8u5l7qX8r3Tg9pQj8uncjbjcsbdcmzxnciubdsiucb489375897345")); // استخدم مفتاحًا قويًا
+        //        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        //        // إنشاء الرمز
+        //        var token = new JwtSecurityToken(
+        //            issuer: "YourIssuer",
+        //            audience: "YourAudience",
+        //            claims: claims,
+        //            expires: DateTime.Now.AddSeconds(9),
+        //            signingCredentials: creds);
+
+        //        return new JwtSecurityTokenHandler().WriteToken(token);
+        //    }
+
+        private static List<User3> Users = new List<User3>
+        {
+            new User3 { Username = "user1", Token = "fixedtoken1" },
+            new User3 { Username = "user2", Token = "fixedtoken2" }
+        };
+
+        [HttpGet("token/{username}")]
+        public IActionResult GetToken(string username)
+        {
+            var user = Users.FirstOrDefault(u => u.Username == username);
+            if (user == null)
             {
-                return Unauthorized(new { Message = "Invalid client credentials" });
+                return Unauthorized();
             }
 
-            // تحقق من بيانات الاعتماد (يمكنك استخدام قاعدة بيانات هنا)
-            if (login.Username == "user1" && login.Password == "password1")
-            {
-                var token = GenerateJwtToken(login.Username);
-                return Ok(new { token });
-            }
-
-            return Unauthorized();
-        }
-        
-        
-        private string GenerateJwtToken(string username)
-        {
-            // إعداد معلومات المستخدم
-            var claims = new[]
-            {
-        new Claim(JwtRegisteredClaimNames.Sub, username),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
-
-            // إعداد المفتاح السري
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Z5sE4l3pTg9pQj8u5l7qX8r3Tg9pQj8u5l7qX8r3Tg9pQj8uncjbjcsbdcmzxnciubdsiucb489375897345")); // استخدم مفتاحًا قويًا
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            // إنشاء الرمز
-            var token = new JwtSecurityToken(
-                issuer: "YourIssuer",
-                audience: "YourAudience",
-                claims: claims,
-                expires: DateTime.Now.AddSeconds(9),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok(new { token = user.Token });
         }
     }
 
