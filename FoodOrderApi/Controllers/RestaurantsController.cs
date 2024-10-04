@@ -7,13 +7,14 @@ using FoodOrderApi.Models;
 using Microsoft.AspNetCore.Authorization;
 namespace FoodOrderApi.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RestaurantsController : ControllerBase
     {
         private readonly DBHelper _dbHelper;
-
+        private const string ApiKeyHeaderName = "X-API-Key";
+        private const string ValidApiKey = "your_api_key_here";
         public RestaurantsController(DBHelper dbHelper)
         {
             _dbHelper = dbHelper;
@@ -23,6 +24,11 @@ namespace FoodOrderApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Restaurant>>> GetRestaurants()
         {
+            if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var apiKey) || apiKey != ValidApiKey)
+            {
+                return Unauthorized("Invalid API Key");
+            }
+
             using (IDbConnection dbConnection = _dbHelper.Connection)
             {
                 dbConnection.Open();
